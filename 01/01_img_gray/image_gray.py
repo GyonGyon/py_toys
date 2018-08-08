@@ -40,21 +40,23 @@ def grayscale(image, graytype = 1):
     img = image.convert('RGBA')
     w = img.width
     h = img.height
+    new = Image.new('RGBA', (w, h))
     for i in range(w):
         for j in range(h):
             p = (i, j)
             r, g, b, a = img.getpixel(p)
             gray = graytype_table[graytype](r, g, b)
-            img.putpixel(p, (gray, gray, gray, a))
-    return img
-    pass
+            # if i == 25 and j == 25:
+                # log(r, g, b, gray)
+            new.putpixel(p, (gray, gray, gray, a))
+    return new
 
 
 def main():
     img = Image.open("sample.png")
     for i in range(1, 6):
-        img = grayscale(img, i)
-        img.save('gray{}.png'.format(i))
+        new = grayscale(img, i)
+        new.save('gray{}.png'.format(i))
 
 
 if __name__ == '__main__':

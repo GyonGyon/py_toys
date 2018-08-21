@@ -4,7 +4,9 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.widget import Widget
 from kivy.clock import Clock
+from kivy.graphics import Rectangle
 # 用于播放声音
 from kivy.core.audio import SoundLoader
 import time
@@ -53,6 +55,17 @@ class TestApp(App):
         )
         layout.add_widget(self.progress_label)
 
+        progress_layout = BoxLayout(
+            orientation='horizontal',
+            height=10,
+            size_hint_y=None,
+        )
+        layout.add_widget(progress_layout)
+        self.progress_played = Button(background_color=(1, 0, 0, 1))
+        self.progress_unplayed = Button(background_color=(0, 0, 1, 1))
+        progress_layout.add_widget(self.progress_played)
+        progress_layout.add_widget(self.progress_unplayed)
+
         control_layout = BoxLayout(orientation='vertical')
         layout.add_widget(control_layout)
         self.play_buttion = Button(
@@ -65,6 +78,9 @@ class TestApp(App):
         self.stop_buttion.bind(on_press=self.stop_music)
         control_layout.add_widget(self.play_buttion)
         control_layout.add_widget(self.stop_buttion)
+
+        self.update_progress(0)
+        self.init_progress()
         return layout
 
     def try_cancel_play_interval(self):
@@ -73,6 +89,10 @@ class TestApp(App):
         except:
             pass
 
+    def init_progress(self):
+        self.progress_played.size_hint_x = 0
+        self.progress_played.width = 0
+        self.progress_unplayed.size_hint_x = 1
 
     def stop_music(self, button):
         self.try_cancel_play_interval()
@@ -81,6 +101,7 @@ class TestApp(App):
         self.audio.stop()
         self.pause_time = 0
         self.update_progress(0)
+        self.init_progress()
 
     def play_music(self, button):
         if self.start:
@@ -93,7 +114,7 @@ class TestApp(App):
         else:
             self.try_cancel_play_interval()
             self.play_interval = Clock.schedule_interval(
-                self.update_progress, 1)
+                self.update_progress, 1/60)
             self.start = True
             self.audio.play()
             self.audio.seek(self.pause_time)
@@ -101,8 +122,13 @@ class TestApp(App):
             # self.update_progress(0)
 
     def update_progress(self, dt):
-        audio_now = formated_sec(self.audio.get_pos())
+        now = self.audio.get_pos()
+        audio_now = formated_sec(now)
         audio_max = self.audio_max
+        played = now / self.audio.length
+        unplayed = 1 - played
+        self.progress_played.size_hint_x = played
+        self.progress_unplayed.size_hint_x = unplayed
         self.progress_label.text = '{}/{}'.format(audio_now, audio_max)
 
 

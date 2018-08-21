@@ -33,6 +33,7 @@ class TestApp(App):
         self.config_window()
         root = self.setup_ui()
         self.start = False
+        self.pause_time = 0
         return root
 
     def config_window(self):
@@ -52,25 +53,52 @@ class TestApp(App):
         )
         layout.add_widget(self.progress_label)
 
+        control_layout = BoxLayout(orientation='vertical')
+        layout.add_widget(control_layout)
         self.play_buttion = Button(
             text='Play',
         )
         self.play_buttion.bind(on_press=self.play_music)
-        layout.add_widget(self.play_buttion)
+        self.stop_buttion = Button(
+            text='Stop',
+        )
+        self.stop_buttion.bind(on_press=self.stop_music)
+        control_layout.add_widget(self.play_buttion)
+        control_layout.add_widget(self.stop_buttion)
         return layout
 
+    def try_cancel_play_interval(self):
+        try:
+            self.play_interval.cancel()
+        except:
+            pass
+
+
+    def stop_music(self, button):
+        self.try_cancel_play_interval()
+        self.play_buttion.text = 'Play'
+        self.start = False
+        self.audio.stop()
+        self.pause_time = 0
+        self.update_progress(0)
+
     def play_music(self, button):
-        if not self.start:
-            Clock.schedule_interval(self.update_progress, 1)
-            self.start = True
-            self.audio.play()
-            self.play_buttion.text = 'Stop'
-            self.update_progress(0)
-        else:
+        if self.start:
+            self.try_cancel_play_interval()
             self.play_buttion.text = 'Play'
+            self.pause_time = self.audio.get_pos()
             self.audio.stop()
             self.start = False
-            self.update_progress(0)
+            # self.update_progress(0)
+        else:
+            self.try_cancel_play_interval()
+            self.play_interval = Clock.schedule_interval(
+                self.update_progress, 1)
+            self.start = True
+            self.audio.play()
+            self.audio.seek(self.pause_time)
+            self.play_buttion.text = 'Pause'
+            # self.update_progress(0)
 
     def update_progress(self, dt):
         audio_now = formated_sec(self.audio.get_pos())

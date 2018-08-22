@@ -2,7 +2,13 @@ from kivy.app import App
 from kivy.config import Config
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
-from translate import translate
+from kivy.uix.button import Button
+from kivy.core.audio import SoundLoader
+from translate import translate, download_audio, fetch_info, audio_path
+import os
+
+
+log = print
 
 
 def font_name():
@@ -23,6 +29,7 @@ class TestApp(App):
     def build(self):
         self.config_window()
         root = self.setup_ui()
+        self.info = None
         return root
 
     def config_window(self):
@@ -40,17 +47,43 @@ class TestApp(App):
         layout = BoxLayout(orientation='vertical')
         input = TextInput(multiline=False)
         input.bind(on_text_validate=self.check)
+        self.input = input
         layout.add_widget(input)
-        
+
+        button = Button(
+            text='播放读音',
+            font_name=font_name(),
+        )
+        button.bind(on_press=self.play_audio)
+        layout.add_widget(button)
+
         result = TextInput()
         result.font_name = font_name()
         layout.add_widget(result)
         self.result = result
-        
+
         return layout
 
     def check(self, input):
-        self.result.text = translate(input.text)
+        if not self.info:
+            self.info = fetch_info(input.text)
+        text = translate(self.info)
+        if text != None:
+            self.result.text = text
+
+    def play_audio(self, buttion):
+        name = self.input.text
+        if self.info == None:
+            self.info = fetch_info(name)
+            if self.info == None:
+                return 
+        file = audio_path(name)
+        if not os.path.exists(file):
+            file = download_audio(self.info, name)
+            if file == None:
+                return
+        audio = SoundLoader.load(file)
+        audio.play()
 
 
 def main():

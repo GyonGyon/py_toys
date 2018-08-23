@@ -16,6 +16,8 @@ class PathTable(str, enum.Enum):
     post = '{}/post'.format(sys.path[0])
     origin = '{}/info.csv'.format(sys.path[0])
     out = '{}/out.csv'.format(sys.path[0])
+    excelin = '{}/info.xlsx'.format(d)
+    excelout = '{}/out.xlsx'.format(d)
 
 
 # Path_table = dict(

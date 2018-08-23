@@ -9,13 +9,12 @@ log = print
 
 
 class PathTable(str, enum.Enum):
-    test = 'test'
-    root = sys.path[0]
-    citys = '{}/citys.json'.format(root)
-    provinces = '{}/provinces.json'.format(sys.path[0])
-    post = '{}/post'.format(sys.path[0])
-    origin = '{}/info.csv'.format(sys.path[0])
-    out = '{}/out.csv'.format(sys.path[0])
+    d = sys.path[0]
+    citys = '{}/citys.json'.format(d)
+    provinces = '{}/provinces.json'.format(d)
+    post = '{}/post'.format(d)
+    origin = '{}/info.csv'.format(d)
+    out = '{}/out.csv'.format(d)
     excelin = '{}/info.xlsx'.format(d)
     excelout = '{}/out.xlsx'.format(d)
 

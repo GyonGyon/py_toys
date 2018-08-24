@@ -16,11 +16,26 @@ def add_province():
     insheet = inbook['city']
     max_column = insheet.max_column
     max_row = insheet.max_row
+    citys = city_post_table()[0]
 
     for i, inrows in enumerate(insheet.rows):
-        for j, inc in enumerate(inrows):
-            outsheet.cell(row=i+1, column=j+1, value=inc.value)
-
+        outc = outsheet.cell(row=i+1, column=3)
+        for j in range(5):
+            if j < 2:
+                inc = inrows[j]
+                outc.value = inc.value
+            elif j == 2:
+                inc = inrows[j]
+                try:
+                    province = citys[inc.value]['province']
+                except:
+                    province = '产地(省级)'
+                outc.value = province
+            else:
+                inc = inrows[j - 1]
+                outc.value = inc.value
+                outsheet.cell(row=i+1, column=j+1, value=inc.value)
+    
     outbook.save(PathTable.excelout)
     pass
 

@@ -8,8 +8,20 @@ log = print
 
 def add_province():
     outbook = openpyxl.Workbook()
-    outsheet = workbook.active
+    outsheet = outbook.active
     outsheet.title = '加入省级区域'
+
+    filename = PathTable.excelin
+    inbook = openpyxl.load_workbook(filename)
+    insheet = inbook['city']
+    max_column = insheet.max_column
+    max_row = insheet.max_row
+
+    for i, inrows in enumerate(insheet.rows):
+        for j, inc in enumerate(inrows):
+            outsheet.cell(row=i+1, column=j+1, value=inc.value)
+
+    outbook.save(PathTable.excelout)
     pass
 
 

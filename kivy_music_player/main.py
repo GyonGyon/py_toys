@@ -52,6 +52,18 @@ class TestApp(App):
         self.audio = SoundLoader.load('SPYAIR - I Wanna Be.mp3')
 
         self.audio_max = formated_sec(self.audio.length)
+        
+        self.setup_progress_layout(layout)
+
+        self.setup_control_layout(layout)
+
+        self.setup_listview(layout)
+
+        self.update_progress(0)
+        self.init_progress()
+        return layout
+
+    def setup_progress_layout(self, layout):
         audio_now = formated_sec(0)
         self.progress_label = Label(
             text='{}/{}'.format(audio_now, self.audio_max),
@@ -68,14 +80,6 @@ class TestApp(App):
         self.progress_unplayed = Button(background_color=(0, 0, 1, 1))
         progress_layout.add_widget(self.progress_played)
         progress_layout.add_widget(self.progress_unplayed)
-
-        self.setup_control_layout(layout)
-
-        self.setup_listview(layout)
-
-        self.update_progress(0)
-        self.init_progress()
-        return layout
 
     def setup_control_layout(self, layout):
         control_layout = BoxLayout(orientation='vertical')

@@ -17,8 +17,6 @@ def add_csv_province(path):
         while s != '':
             l = s.split(',')
             prefecture = l[2]
-            log(l)
-            log(prefecture)
             province = citys[prefecture]['province']
             l.insert(2, province)
             s_new = ','.join(l)

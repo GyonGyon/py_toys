@@ -2,11 +2,14 @@ from kivy.app import App
 from kivy.config import Config
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
 from kivy.graphics import Rectangle
+from kivy.metrics import dp
 # 用于播放声音
 from kivy.core.audio import SoundLoader
 import time
@@ -66,22 +69,56 @@ class TestApp(App):
         progress_layout.add_widget(self.progress_played)
         progress_layout.add_widget(self.progress_unplayed)
 
-        control_layout = BoxLayout(orientation='vertical')
-        layout.add_widget(control_layout)
-        self.play_buttion = Button(
-            text='Play',
-        )
-        self.play_buttion.bind(on_press=self.play_music)
-        self.stop_buttion = Button(
-            text='Stop',
-        )
-        self.stop_buttion.bind(on_press=self.stop_music)
-        control_layout.add_widget(self.play_buttion)
-        control_layout.add_widget(self.stop_buttion)
+        self.setup_control_layout(layout)
+
+        self.setup_listview(layout)
 
         self.update_progress(0)
         self.init_progress()
         return layout
+
+    def setup_control_layout(self, layout):
+        control_layout = BoxLayout(orientation='vertical')
+        layout.add_widget(control_layout)
+        self.setup_button_player(control_layout)
+        self.setup_button_stop(control_layout)
+        
+
+    def setup_button_player(self, layout):
+        self.play_buttion = Button(
+            text='Play',
+        )
+        self.play_buttion.bind(on_press=self.play_music)
+        layout.add_widget(self.play_buttion)
+
+    def setup_button_stop(self, layout):
+        self.stop_buttion = Button(
+            text='Stop',
+        )
+        self.stop_buttion.bind(on_press=self.stop_music)
+        layout.add_widget(self.stop_buttion)
+
+    def setup_listview(self, layout):
+        gl = GridLayout(
+            cols=1,
+            spacing=dp(2),
+            size_hint_y=None,
+        )
+        gl.bind(minimum_height=gl.setter('height'))
+        # 测试: 往 gl 中添加 30 个 Button
+        for i in range(30):
+            btn = Button(text=str(i), size_hint_y=None, height=40)
+            gl.add_widget(btn)
+        # 测试: 把 gl 装入 scroll 中
+        scroll = ScrollView(
+            # pos=(dp(100), dp(100)),
+            size=(dp(200), dp(300)),
+            size_hint_y=(None),
+            bar_width=dp(10),
+        )
+        scroll.add_widget(gl)
+        #
+        layout.add_widget(scroll)
 
     def try_cancel_play_interval(self):
         try:

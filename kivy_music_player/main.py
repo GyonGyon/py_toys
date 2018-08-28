@@ -13,9 +13,16 @@ from kivy.metrics import dp
 # 用于播放声音
 from kivy.core.audio import SoundLoader
 import time
+import enum
+import sys
 
 
 log = print
+
+
+class PathTable(str, enum.Enum):
+    d = sys.path[0]
+    audios = '{}/audios'.format(d)
 
 
 def font_name():
@@ -35,10 +42,11 @@ def formated_sec(second):
 
 class TestApp(App):
     def build(self):
-        self.config_window()
-        root = self.setup_ui()
         self.start = False
         self.pause_time = 0
+        self.audio_max = 0
+        self.config_window()
+        root = self.setup_ui()
         return root
 
     def config_window(self):
@@ -49,9 +57,6 @@ class TestApp(App):
 
     def setup_ui(self):
         layout = BoxLayout(orientation='vertical')
-        
-        self.audio = SoundLoader.load('SPYAIR - I Wanna Be.mp3')
-        self.audio_max = formated_sec(self.audio.length)
         
         self.setup_progress_label(layout)
         self.setup_progress_layout(layout)
@@ -76,13 +81,15 @@ class TestApp(App):
             size_hint_y=None,
         )
         layout.add_widget(progress_layout)
+        
         self.progress_played = Button(background_color=(1, 0, 0, 1))
-        self.progress_unplayed = Button(background_color=(0, 0, 1, 1))
         progress_layout.add_widget(self.progress_played)
+        
+        self.progress_unplayed = Button(background_color=(0, 0, 1, 1))
         progress_layout.add_widget(self.progress_unplayed)
 
     def setup_control_layout(self, layout):
-        control_layout = BoxLayout(orientation='vertical')
+        control_layout = BoxLayout(orientation='horizontal')
         layout.add_widget(control_layout)
         self.setup_button_player(control_layout)
         self.setup_button_stop(control_layout)
@@ -101,26 +108,34 @@ class TestApp(App):
         self.stop_buttion.bind(on_press=self.stop_music)
         layout.add_widget(self.stop_buttion)
 
-    def setup_listview(self, layout):
-        gl = GridLayout(
+    def setup_listview_inner(self, layout):
+        listview = GridLayout(
             cols=1,
             spacing=dp(2),
             size_hint_y=None,
         )
-        gl.bind(minimum_height=gl.setter('height'))
-        # 测试: 往 gl 中添加 30 个 Button
-        for i in range(30):
-            btn = Button(text=str(i), size_hint_y=None, height=40)
-            gl.add_widget(btn)
-        # 测试: 把 gl 装入 scroll 中
+        listview.bind(minimum_height=listview.setter('height'))
+        # 测试: 往 listview 中添加 30 个 Button
+        l = ['SPYAIR - I Wanna Be.mp3']
+        for i, name in enumerate(l):
+            file_p = '{}/{}'.format(PathTable.audios, name)
+            text = '{} - {}'.format(str(i), name)
+            btn = Button(text=text, size_hint_y=None, height=40)
+            btn.bind(on_press=self.play_music_selected(file_p))
+            listview.add_widget(btn)
+
+        self.audio = SoundLoader.load('SPYAIR - I Wanna Be.mp3')
+        self.audio_max = formated_sec(self.audio.length)
+        layout.add_widget(listview)
+
+    def setup_listview(self, layout):
         scroll = ScrollView(
             # pos=(dp(100), dp(100)),
             size=(dp(200), dp(300)),
             size_hint_y=(None),
             bar_width=dp(10),
         )
-        scroll.add_widget(gl)
-        #
+        self.setup_listview_inner(scroll)
         layout.add_widget(scroll)
 
     def try_cancel_play_interval(self):
@@ -160,6 +175,14 @@ class TestApp(App):
             self.audio.seek(self.pause_time)
             self.play_buttion.text = 'Pause'
             # self.update_progress(0)
+
+    def play_music_selected(self, path):
+        def func(button):
+            print(path)
+            self.audio = SoundLoader.load(path)
+            self.audio_max = formated_sec(self.audio.length)
+            self.play_music(button)
+        return func
 
     def update_progress(self, dt):
         now = self.audio.get_pos()

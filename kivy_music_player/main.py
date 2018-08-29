@@ -15,6 +15,7 @@ from kivy.core.audio import SoundLoader
 import time
 import enum
 import sys
+import os
 
 
 log = print
@@ -23,6 +24,17 @@ log = print
 class PathTable(str, enum.Enum):
     d = sys.path[0]
     audios = '{}/audios'.format(d)
+
+
+def fetch_audios():
+    audios = []
+    for name in os.listdir(PathTable.audios):
+        path = '{}/{}'.format(PathTable.audios, name)
+        audios.append(dict(
+            path=path,
+            name=name,
+        ))
+    return audios
 
 
 def font_name():
@@ -57,7 +69,7 @@ class TestApp(App):
 
     def setup_ui(self):
         layout = BoxLayout(orientation='vertical')
-        
+
         self.setup_progress_label(layout)
         self.setup_progress_layout(layout)
         self.setup_control_layout(layout)
@@ -81,10 +93,10 @@ class TestApp(App):
             size_hint_y=None,
         )
         layout.add_widget(progress_layout)
-        
+
         self.progress_played = Button(background_color=(1, 0, 0, 1))
         progress_layout.add_widget(self.progress_played)
-        
+
         self.progress_unplayed = Button(background_color=(0, 0, 1, 1))
         progress_layout.add_widget(self.progress_unplayed)
 
@@ -98,14 +110,14 @@ class TestApp(App):
         self.play_buttion = Button(
             text='Play',
         )
-        self.play_buttion.bind(on_press=self.play_music)
+        self.play_buttion.bind(on_press=self.toggle_music)
         layout.add_widget(self.play_buttion)
 
     def setup_button_stop(self, layout):
         self.stop_buttion = Button(
             text='Stop',
         )
-        self.stop_buttion.bind(on_press=self.stop_music)
+        self.stop_buttion.bind(on_press=self.audio_stop)
         layout.add_widget(self.stop_buttion)
 
     def setup_listview_inner(self, layout):
@@ -115,16 +127,17 @@ class TestApp(App):
             size_hint_y=None,
         )
         listview.bind(minimum_height=listview.setter('height'))
-        # 测试: 往 listview 中添加 30 个 Button
-        l = ['SPYAIR - I Wanna Be.mp3']
-        for i, name in enumerate(l):
-            file_p = '{}/{}'.format(PathTable.audios, name)
-            text = '{} - {}'.format(str(i), name)
-            btn = Button(text=text, size_hint_y=None, height=40)
-            btn.bind(on_press=self.play_music_selected(file_p))
+        filepathlist = []
+        for i, info in enumerate(fetch_audios()):
+            filepathlist.append(info['path'])
+            text = '{} - {}'.format(str(i), info['name'])
+            btn = Button(text=text, size_hint_y=None, height=40, font_name=font_name())
+            btn.bind(on_press=self.play_music_selected(info['path'], i))
             listview.add_widget(btn)
 
-        self.audio = SoundLoader.load('SPYAIR - I Wanna Be.mp3')
+        first = filepathlist[0]
+        self.audio = SoundLoader.load(first)
+        self.set_playmode_circle()
         self.audio_max = formated_sec(self.audio.length)
         layout.add_widget(listview)
 
@@ -138,6 +151,12 @@ class TestApp(App):
         self.setup_listview_inner(scroll)
         layout.add_widget(scroll)
 
+    def set_playmode_circle(self):
+        def func(audio):
+            log('play')
+        self.audio.bind(on_play=func)
+        # self.audio.unbind(on_play=func)
+
     def try_cancel_play_interval(self):
         try:
             self.play_interval.cancel()
@@ -149,7 +168,7 @@ class TestApp(App):
         self.progress_played.width = 0
         self.progress_unplayed.size_hint_x = 1
 
-    def stop_music(self, button):
+    def audio_stop(self, button):
         self.try_cancel_play_interval()
         self.play_buttion.text = 'Play'
         self.start = False
@@ -158,30 +177,34 @@ class TestApp(App):
         self.update_progress(0)
         self.init_progress()
 
-    def play_music(self, button):
+    def toggle_music(self, button):
         if self.start:
-            self.try_cancel_play_interval()
-            self.play_buttion.text = 'Play'
-            self.pause_time = self.audio.get_pos()
-            self.audio.stop()
-            self.start = False
-            # self.update_progress(0)
+            self.audio_pause()
         else:
-            self.try_cancel_play_interval()
-            self.play_interval = Clock.schedule_interval(
-                self.update_progress, 1/60)
-            self.start = True
-            self.audio.play()
-            self.audio.seek(self.pause_time)
-            self.play_buttion.text = 'Pause'
-            # self.update_progress(0)
+            self.audio_paly()
 
-    def play_music_selected(self, path):
+    def audio_paly(self):
+        self.play_buttion.text = 'Pause'
+        self.try_cancel_play_interval()
+        self.play_interval = Clock.schedule_interval(
+            self.update_progress, 1/60)
+        self.start = True
+        self.audio.play()
+        self.audio.seek(self.pause_time)
+        
+    def audio_pause(self):
+        self.play_buttion.text = 'Play'
+        self.try_cancel_play_interval()
+        self.pause_time = self.audio.get_pos()
+        self.audio.stop()
+        self.start = False
+
+    def play_music_selected(self, path, index):
         def func(button):
-            print(path)
+            self.audio_stop(button)
             self.audio = SoundLoader.load(path)
             self.audio_max = formated_sec(self.audio.length)
-            self.play_music(button)
+            self.toggle_music(button)
         return func
 
     def update_progress(self, dt):
